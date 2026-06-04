@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title data-i18n="app_title">Troubleshooting Server CIAO</title>
+  <style>
+  :root { --bg1: rgba(0,255,255,0.15); --bg2: rgba(255,0,255,0.15); --bg3a: #05010d; --bg3b: #0b0120; --panel: rgba(20, 10, 40, 0.9); --text: #fff; --accent1: #ff3c00; --accent2: #ff00ff; --accent3: #00ffff; --btn-bg: linear-gradient(135deg, #ff3c00, #ff00ff); --btn-bg-hover: linear-gradient(135deg, #00ffff, #ff00ff);} 
+  * { box-sizing: border-box; }
+  body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: linear-gradient(120deg, var(--bg1), transparent 40%), linear-gradient(240deg, var(--bg2), transparent 40%), linear-gradient(0deg, var(--bg3a), var(--bg3b)); background-size: 200% 200%; animation: cyberMove 10s linear infinite; color: var(--text);} 
+  @keyframes cyberMove { 0%{background-position:0% 50%} 100%{background-position:100% 50%} } 
+  .brand-left,.brand-right{position:fixed;top:16px;z-index:1000;display:flex;align-items:center;gap:8px;padding:4px 8px;border-radius:8px;background:rgba(0,0,0,.12);backdrop-filter:blur(2px)} 
+  .brand-left{left:16px} .brand-right{right:16px} 
+  .brand-left img{height:38px;width:auto;display:block;filter:drop-shadow(0 0 6px rgba(0,255,255,.5))} 
+  .brand-right .brand-text{font-weight:700;letter-spacing:.3px;color:#fff;text-shadow:0 0 6px rgba(0,255,255,.35),0 0 10px rgba(255,0,255,.25);font-size:18px;white-space:nowrap} 
+  .page-top-spacer{height:80px;width:100%} 
+  #app{max-width:980px;margin:0 auto 32px;padding:24px 24px 40px;background:var(--panel);border-radius:12px;box-shadow:0 0 20px rgba(0,255,255,.4),0 0 40px rgba(255,0,255,.2)} 
+  .app-header{display:grid;grid-template-columns:1fr;align-items:center;gap:8px;margin-bottom:12px;position:relative;text-align:center} 
+  h1{margin:0;text-align:center;text-shadow:0 0 5px var(--accent3),0 0 10px var(--accent3),0 0 20px var(--accent2);font-size:1.6rem;line-height:1.2} 
+  .step-title{margin-top:10px;margin-bottom:8px;font-size:1.2rem} 
+  .visually-hidden{position:absolute!important;height:1px;width:1px;overflow:hidden;clip:rect(1px,1px,1px,1px);white-space:nowrap;border:0;padding:0;margin:-1px} 
+  .step{display:none;margin:12px 0 28px} 
+  .step.is-active{display:block} 
+  .buttons-center{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-top:15px;width:100%} 
+  .btn,.btn-secondary{background:var(--btn-bg);color:#fff;border:none;padding:12px 20px;margin:6px 4px;cursor:pointer;border-radius:8px;font-size:15px;font-weight:bold;letter-spacing:.5px;text-transform:uppercase;box-shadow:0 0 10px rgba(255,60,0,.6),0 0 20px rgba(255,0,255,.4);transition:all .25s ease} 
+  .btn:hover,.btn-secondary:hover{transform:translateY(-1px) scale(1.04);box-shadow:0 0 15px rgba(0,255,255,.8),0 0 30px rgba(255,0,255,.6);background:var(--btn-bg-hover)} 
+  .btn-secondary{background:linear-gradient(135deg,#7a7a7a,#444);box-shadow:0 0 10px rgba(120,120,120,.4),0 0 20px rgba(80,80,80,.3);text-transform:none;letter-spacing:0} 
+  .bottom-actions{display:flex;justify-content:space-between;gap:10px;margin-top:18px;flex-wrap:wrap} 
+  .image-links{display:flex;gap:16px;flex-wrap:wrap;margin-top:12px} 
+  .help-image{width:150px;height:110px;object-fit:cover;border-radius:12px;cursor:pointer;transition:.25s;box-shadow:0 0 12px rgba(0,0,0,.4)}
+  .help-image:hover{transform:scale(1.08);box-shadow:0 0 20px rgba(0,255,255,.8)}
+  .category-note{color:#ff4d4d;font-weight:700;display:block;margin-top:8px;}
+  ol,ul{padding-left:20px}
+  li{color:#ffd3d3}
+  .lang-switcher{position:absolute; top:-8px; right:0; display:flex; gap:6px} 
+  .lang-switcher button{padding:6px 10px; font-size:12px; border-radius:6px; text-transform:none} 
+  #steps:focus { outline: none; }
+  /* Stili per l'ingrandimento immagine (Modal) */
+  .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); backdrop-filter: blur(4px); align-items: center; justify-content: center; cursor: pointer; }
+  .modal.is-active { display: flex; }
+  .modal-content { max-width: 90%; max-height: 90%; border-radius: 8px; box-shadow: 0 0 30px rgba(0,255,255,0.5); border: 2px solid var(--accent3); cursor: default; }
+  .modal-close { position: absolute; top: 20px; right: 30px; font-size: 40px; color: #fff; cursor: pointer; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <!-- BRAND -->
+  <div class="brand-left" aria-hidden="false">
+    <img src="images/dxc.png" alt="Logo DXC" data-i18n="alt_dxc_logo" data-i18n-attr="alt"/>
+  </div>
+  <div class="brand-right" aria-label="EssilorLuxottica">
+    <span class="brand-text">EssilorLuxottica</span>
+  </div>
+  <div class="page-top-spacer" aria-hidden="true"></div>
+  <div id="app" role="region" aria-live="polite">
+    <header class="app-header">
+      <h1 data-i18n="app_title">Troubleshooting Server CIAO</h1>
+      <div class="lang-switcher" aria-label="Language switcher">
+        <button type="button" class="btn-secondary" onclick="setLanguage('it')" data-i18n="btn_lang_it">Italiano 🇮🇹</button>
+        <button type="button" class="btn-secondary" onclick="setLanguage('en')" data-i18n="btn_lang_en">English 🇬🇧</button>
+      </div>
+    </header>
+
+    <main id="steps" tabindex="-1">
+      <!-- LANG SELECT -->
+      <section id="langSelect" class="step is-active" role="region" aria-labelledby="lang-title">
+        <h2 id="lang-title" class="step-title" data-i18n="lang_select_title">Seleziona la lingua / Select language</h2>
+        <div class="buttons-center">
+          <button type="button" class="btn" onclick="setLanguage('it')" data-i18n="btn_lang_it" data-next="intro">Italiano 🇮🇹</button>
+          <button type="button" class="btn" onclick="setLanguage('en')" data-i18n="btn_lang_en" data-next="intro">English 🇬🇧</button>
+        </div>
+      </section>
+
+      <!-- INTRO -->
+      <section id="intro" class="step" role="region" aria-labelledby="intro-title">
+        <h2 id="intro-title" class="step-title" data-i18n="intro_title">Guida – CIAO non si apre</h2>
+        <!-- Due paragrafi separati -->
+        <p data-i18n="intro_p1_a" data-i18n-type="html">Questa guida è dedicata ai casi in cui <strong>CIAO</strong> non si apre e mostra un errore di connessione con il server.</p>
+        <p data-i18n="intro_p1_b" data-i18n-type="html">Si raccomanda di <strong>non intervenire sulla stampante fiscale</strong>, poiché il problema non dipende da essa.</p>
+        <div class="image-links">
+          <a href="images/server error.png" target="_blank">
+            <img src="images/server error.png" class="help-image" alt="Esempio errore connessione CIAO" data-i18n="alt_intro_img" data-i18n-attr="alt"/>
+          </a>
+        </div>
+        <div class="buttons-center">
+          <button type="button" class="btn" data-next="step1" data-i18n="btn_next">AVANTI</button>
+        </div>
+        <button type="button" class="btn-secondary" data-back data-i18n="btn_back">⬅ Indietro</button>
+      </section>
+
+      <!-- STEP 1 -->
+      <section id="step1" class="step" role="region" aria-labelledby="step1-title">
+        <h2 id="step1-title" class="step-title" data-i18n="step1_title">Verifica server – Personality Server</h2>
+        <p data-i18n="step1_q1">verifica i server global-iss / global-util sono pingabili da Personality Server?</p>
+        <div class="image-links">
+          <a href="images/global iss ping.png" target="_blank" rel="noopener">
+            <img src="images/global iss ping.png" class="help-image" alt="Esempio errore connessione CIAO" data-i18n="alt_intro_img" data-i18n-attr="alt"/>
+          </a>
+        </div>
+        <div class="buttons-center">
+          <button type="button" class="btn" data-next="step2" data-i18n="yes">SÌ</button>
+          <button type="button" class="btn" data-next="step3" data-i18n="no">NO</button>
+        </div>
+        <button type="button" class="btn-secondary" data-back data-i18n="btn_back">⬅ Indietro</button>
+      </section>
+
+      <!-- STEP 2 -->
+      <section id="step2" class="step" role="region" aria-labelledby="step2-title">
+        <h2 id="step2-title" class="step-title" data-i18n="step2_title">Ticket – Assegnazione</h2>
+        <p data-i18n="step2_p1" data-i18n-type="html">Aprire un ticket e assegnarlo a <strong>SSS North America - POS Triage - 3rd Level Support</strong></p>
+        <ul>
+          <li data-i18n="step2_cat1" data-i18n-type="html"><strong>Categoria:</strong> RETAIL > IN STORE TECH > POS SW > CIAO Optical > CIAO - Server Connection</li>
+          <li data-i18n="step2_cat2" data-i18n-type="html"><strong>Categoria:</strong> RETAIL > IN STORE TECH > POS SW > CIAO Sun > CIAO - Server Connection</li>
+        </ul>
+        <div class="bottom-actions">
+          <button type="button" class="btn-secondary" data-back data-i18n="btn_back">⬅ Indietro</button>
+          <button type="button" class="btn" data-copy data-i18n="btn_copy">Copia cronologia</button>
+        </div>
+      </section>
+
+      <!-- STEP 3 -->
+      <section id="step3" class="step" role="region" aria-labelledby="step3-title">
+        <h2 id="step3-title" class="step-title" data-i18n="step3_title">Individuazione VM – Dell EMC</h2>
+        <!-- Due paragrafi separati -->
+        <p data-i18n="step3_p1_a" data-i18n-type="html">Chiedere allo store di individuare la macchina virtuale denominata <strong>Dell EMC</strong>.</p>
+        <p data-i18n="step3_p1_b" data-i18n-type="html">Se hanno difficoltà, inviare via <strong>Teams</strong> la foto del server per facilitarne l’identificazione.</p>
+        <div class="image-links">
+          <a href="images/dell emc.png" target="_blank">
+            <img src="images/dell emc.png" class="help-image" alt="Esempio foto server Dell EMC" data-i18n="alt_dell" data-i18n-attr="alt"/>
+          </a>
+        </div>
+        <div class="buttons-center">
+          <button type="button" class="btn" data-next="step4" data-i18n="btn_next">AVANTI</button>
+        </div>
+        <button type="button" class="btn-secondary" data-back data-i18n="btn_back">⬅ Indietro</button>
+      </section>
+
+      <!-- STEP 4 -->
+      <section id="step4" class="step" role="region" aria-labelledby="step4-title">
+        <h2 id="step4-title" class="step-title" data-i18n="step4_title">Power cycle server Dell EMC</h2>
+        <ol>
+          <li data-i18n="step4_li1" data-i18n-type="html">Chiedere allo store di <strong>spegnere</strong> il server <strong>Dell EMC</strong> dall’apposito pulsante.</li>
+          <li data-i18n="step4_li2" data-i18n-type="html">Staccare il <strong>cavo di alimentazione</strong> per circa <strong>10 secondi</strong>, quindi ricollegarlo.</li>
+          <li data-i18n="step4_li3" data-i18n-type="html">Per verificarne l’esito, <strong>attendere almeno 15–20 minuti</strong>.</li>
+        </ol>
+        <p data-i18n="step4_q1" data-i18n-type="html"><strong>Problema risolto?</strong></p>
+        <div class="buttons-center">
+          <button type="button" class="btn" data-next="step5" data-i18n="yes">SÌ</button>
+          <button type="button" class="btn" data-next="step6" data-i18n="no">NO</button>
+        </div>
+        <button type="button" class="btn-secondary" data-back data-i18n="btn_back">⬅ Indietro</button>
+      </section>
+
+      <!-- STEP 5 -->
+      <section id="step5" class="step" role="region" aria-labelledby="step5-title">
+        <h2 id="step5-title" class="step-title" data-i18n="step5_title">Ticket – Risolto</h2>
+        <p data-i18n="step5_p1">Aprire un ticket e chiuderlo inserendo uno screenshot dell’applicativo CIAO aperto.</p>
+        <ul>
+          <li data-i18n="step5_cat1" data-i18n-type="html"><strong>Categoria:</strong> RETAIL > IN STORE TECH > POS SW > CIAO Optical > CIAO - Server Connection</li>
+          <li data-i18n="step5_cat2" data-i18n-type="html"><strong>Categoria:</strong> RETAIL > IN STORE TECH > POS SW > CIAO Sun > CIAO - Server Connection</li>
+        </ul>
+        <div class="bottom-actions">
+          <button type="button" class="btn-secondary" data-back data-i18n="btn_back">⬅ Indietro</button>
+          <button type="button" class="btn" data-copy data-i18n="btn_copy">Copia cronologia</button>
+        </div>
+      </section>
+
+      <!-- STEP 6 -->
+      <section id="step6" class="step" role="region" aria-labelledby="step6-title">
+        <h2 id="step6-title" class="step-title" data-i18n="step6_title">Escalation</h2>
+        <p data-i18n="step6_p1" data-i18n-type="html">Aprire un ticket e assegnarlo al local IT.<span class="category-note">Categoria: RETAIL > IN STORE TECH > POS SW > CIAO Sun > CIAO - Server Connection</span></p>
+        <div class="bottom-actions">
+          <button type="button" class="btn-secondary" data-back data-i18n="btn_back">⬅ Indietro</button>
+          <button type="button" class="btn" data-copy data-i18n="btn_copy">Copia cronologia</button>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Contenitore per l'immagine ingrandita -->
+  <div id="imgModal" class="modal" aria-hidden="true">
+    <span class="modal-close">&times;</span>
+    <img class="modal-content" id="modalImg" alt="Vista ingrandita">
+  </div>
+
+  <script>
+  // ===== i18n dictionary =====
+  const translations = {
+    it: {
+      app_title: "Troubleshooting Server CIAO",
+      alt_dxc_logo: "Logo DXC",
+      lang_select_title: "Seleziona la lingua / Select language",
+      btn_lang_it: "Italiano 🇮🇹",
+      btn_lang_en: "English 🇬🇧",
+      btn_next: "AVANTI",
+      btn_back: "⬅ Indietro",
+      btn_copy: "Copia cronologia",
+      yes: "SÌ",
+      no: "NO",
+      copy_success: "Troubleshooting copiato negli appunti!",
+      copy_error: "Impossibile copiare negli appunti su questo browser.",
+      intro_title: "Guida – CIAO non si apre",
+      intro_p1_a: "Questa guida è dedicata ai casi in cui <strong>CIAO</strong> non si apre e mostra un errore di connessione con il server.",
+      intro_p1_b: "Si raccomanda di <strong>non intervenire sulla stampante fiscale</strong>, poiché il problema non dipende da essa.",
+      alt_intro_img: "Esempio errore connessione CIAO",
+      step1_title: "Verifica server – Personality Server",
+      step1_q1: "verifica i server global-iss / global-util sono pingabili da Personality Server?",
+      step2_title: "Ticket – Assegnazione",
+      step2_p1: "Aprire un ticket e assegnarlo a <strong>SSS North America - POS Triage - 3rd Level Support</strong>",
+      step2_cat1: "<strong>Categoria:</strong> RETAIL > IN STORE TECH > POS SW > CIAO Optical > CIAO - Server Connection",
+      step2_cat2: "<strong>Categoria:</strong> RETAIL > IN STORE TECH > POS SW > CIAO Sun > CIAO - Server Connection",
+      step3_title: "Individuazione VM – Dell EMC",
+      step3_p1_a: "Chiedere allo store di individuare la macchina virtuale denominata <strong>Dell EMC</strong>.",
+      step3_p1_b: "Se hanno difficoltà, inviare via <strong>Teams</strong> la foto del server per facilitarne l’identificazione.",
+      alt_dell: "Esempio foto server Dell EMC",
+      step4_title: "Power cycle server Dell EMC",
+      step4_li1: "Chiedere allo store di <strong>spegnere</strong> il server <strong>Dell EMC</strong> dall’apposito pulsante.",
+      step4_li2: "Staccare il <strong>cavo di alimentazione</strong> per circa <strong>10 secondi</strong>, quindi ricollegarlo.",
+      step4_li3: "Per verificarne l’esito, <strong>attendere almeno 15–20 minuti</strong>.",
+      step4_q1: "<strong>Problema risolto?</strong>",
+      step5_title: "Ticket – Risolto",
+      step5_p1: "Aprire un ticket e chiuderlo inserendo uno screenshot dell’applicativo CIAO aperto.",
+      step5_cat1: "<strong>Categoria:</strong> RETAIL > IN STORE TECH > POS SW > CIAO Optical > CIAO - Server Connection",
+      step5_cat2: "<strong>Categoria:</strong> RETAIL > IN STORE TECH > POS SW > CIAO Sun > CIAO - Server Connection",
+      step6_title: "Escalation",
+      step6_p1: "Aprire un ticket e assegnarlo al local IT.<span class=\"category-note\">Categoria: RETAIL > IN STORE TECH > POS SW > CIAO Sun > CIAO - Server Connection</span>",
+    },
+    en: {
+      app_title: "CIAO Server Troubleshooting",
+      alt_dxc_logo: "DXC Logo",
+      lang_select_title: "Select language / Seleziona la lingua",
+      btn_lang_it: "Italiano 🇮🇹",
+      btn_lang_en: "English 🇬🇧",
+      btn_next: "NEXT",
+      btn_back: "⬅ Back",
+      btn_copy: "Copy troubleshooting",
+      yes: "YES",
+      no: "NO",
+      copy_success: "Troubleshooting copied to clipboard!",
+      copy_error: "Unable to copy to clipboard in this browser.",
+      intro_title: "Guide – CIAO won’t open",
+      intro_p1_a: "This guide covers cases where <strong>CIAO</strong> won’t open and shows a server connection error.",
+      intro_p1_b: "Please <strong>do not work on the fiscal printer</strong>, as the issue is not related to it.",
+      step1_title: "Server check – Personality Server",
+      step1_q1: "Are the Global ISS server and the Global Utile server pingable from Personality Server?",
+      step2_title: "Ticket – Assignment",
+      step2_p1: "Open a ticket and assign it to <strong>SSS North America - POS Triage - 3rd Level Support</strong>",
+      step2_cat1: "<strong>Category:</strong> RETAIL > IN STORE TECH > POS SW > CIAO Optical > CIAO - Server Connection",
+      step2_cat2: "<strong>Category:</strong> RETAIL > IN STORE TECH > POS SW > CIAO Sun > CIAO - Server Connection",
+      step3_title: "VM identification – Dell EMC",
+      step3_p1_a: "Ask the store to locate the virtual machine named <strong>Dell EMC</strong>.",
+      step3_p1_b: "If they struggle, send the server photo via <strong>Teams</strong> to help identification.",
+      alt_dell: "Example Dell EMC server photo",
+      step4_title: "Dell EMC server power cycle",
+      step4_li1: "Ask the store to <strong>turn off</strong> the <strong>Dell EMC</strong> server using its power button.",
+      step4_li2: "Unplug the <strong>power cable</strong> for about <strong>10 seconds</strong>, then reconnect it.",
+      step4_li3: "To verify the outcome, <strong>wait at least 15–20 minutes</strong>.",
+      step4_q1: "<strong>Issue resolved?</strong>",
+      step5_title: "Ticket – Resolved",
+      step5_p1: "Open a ticket and close it by attaching a screenshot of CIAO opened.",
+      step5_cat1: "<strong>Category:</strong> RETAIL > IN STORE TECH > POS SW > CIAO Optical > CIAO - Server Connection",
+      step5_cat2: "<strong>Category:</strong> RETAIL > IN STORE TECH > POS SW > CIAO Sun > CIAO - Server Connection",
+      step6_title: "Escalation",
+      step6_p1: "Open a ticket and assign it to local IT.<span class=\"category-note\">Category: RETAIL > IN STORE TECH > POS SW > CIAO Sun > CIAO - Server Connection</span>",
+    }
+  };
+
+  // ===== navigation state =====
+  const historyStack = [];
+  let currentStepId = 'langSelect';
+  const visited = new Set();
+  let language = 'it';
+  const clickTrail = [];
+
+  window.addEventListener('DOMContentLoaded', () => {
+    applyTranslations();
+    showStep(currentStepId);
+    
+    const modal = document.getElementById('imgModal');
+    const mImg = document.getElementById('modalImg');
+    const closeBtn = modal.querySelector('.modal-close');
+
+    document.addEventListener('click', (e) => {
+      // Gestione clic sulle immagini per ingrandirle
+      const imgLink = e.target.closest('.image-links a');
+      if (imgLink) {
+        e.preventDefault(); // Impedisce l'apertura di una nuova pagina
+        const img = imgLink.querySelector('img');
+        if (img) {
+          mImg.src = img.src;
+          modal.classList.add('is-active');
+          modal.setAttribute('aria-hidden', 'false');
+        }
+        return;
+      }
+
+      const target = e.target.closest('button');
+      if (!target) return;
+
+      const nextId = target.getAttribute('data-next');
+      const isBack = target.hasAttribute('data-back');
+      const isCopy = target.hasAttribute('data-copy');
+
+      if (isCopy) { copyHistory(); return; }
+      if (isBack)  { goBack(); return; }
+
+      if (nextId) {
+        // Step title in IT/EN
+        const stepEl = document.getElementById(currentStepId);
+        const h2 = stepEl ? stepEl.querySelector('h2') : null;
+        const stepTitleIt = h2 ? getTextFromI18n(h2, 'it') : currentStepId;
+        const stepTitleEn = h2 ? getTextFromI18n(h2, 'en') : currentStepId;
+
+        // Button label in IT/EN
+        const itLabel = getTextFromI18n(target, 'it');
+        const enLabel = getTextFromI18n(target, 'en');
+
+        clickTrail.push({
+          fromStepId: currentStepId,
+          fromStepTitle: { it: stepTitleIt, en: stepTitleEn },
+          action: { it: itLabel, en: enLabel },
+          toStepId: nextId
+        });
+
+        goTo(nextId);
+        return;
+      }
+    });
+
+    // Chiude il modal cliccando fuori o sulla X
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal || e.target === closeBtn) {
+        modal.classList.remove('is-active');
+        modal.setAttribute('aria-hidden', 'true');
+      }
+    });
+  });
+
+  function showStep(stepId){
+    document.querySelectorAll('.step').forEach(s => s.classList.remove('is-active'));
+    const stepEl = document.getElementById(stepId);
+    if (stepEl){
+      stepEl.classList.add('is-active');
+      const h = stepEl.querySelector('h2');
+      if (h) {
+        document.getElementById('steps').focus();
+      }
+      visited.add(stepId);
+    }
+  }
+  function goTo(stepId){
+    if (stepId === currentStepId) return;
+    historyStack.push(currentStepId);
+    currentStepId = stepId;
+    showStep(stepId);
+  }
+  function goBack(){
+    if (!historyStack.length) return;
+    currentStepId = historyStack.pop();
+    if (clickTrail.length > 0) clickTrail.pop();
+    showStep(currentStepId);
+  }
+
+  // ===== i18n helpers =====
+  function t(key) {
+    if (translations[language] && translations[language][key] != null) return translations[language][key];
+    if (translations.it && translations.it[key] != null) return translations.it[key];
+    return key;
+  }
+  function looksLikeHtml(str) {
+    const s = String(str || "");
+    return /<[^>]+>/.test(s) || /&[a-zA-Z#0-9]+;/.test(s);
+  }
+  function applyTranslations() {
+    document.documentElement.setAttribute('lang', language);
+    const titleEl = document.querySelector("title[data-i18n='app_title']");
+    if (titleEl) titleEl.textContent = t('app_title');
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      const key = el.getAttribute('data-i18n');
+      const val = t(key);
+      const attr = el.getAttribute('data-i18n-attr');
+      const type = el.getAttribute('data-i18n-type');
+      if (attr) {
+        attr.split(',').forEach(a => el.setAttribute(a.trim(), val));
+      } else if (type === 'html' && looksLikeHtml(val)) {
+        el.innerHTML = val;
+      } else {
+        el.textContent = val;
+      }
+    });
+  }
+  function setLanguage(lang) {
+    language = (lang === 'en') ? 'en' : 'it';
+    applyTranslations();
+    if (currentStepId === 'langSelect') {
+      historyStack.length = 0;
+      historyStack.push('langSelect');
+      currentStepId = 'intro';
+      showStep(currentStepId);
+    }
+  }
+
+  // ===== copy helpers =====
+  function stripHTML(html) { const tmp = document.createElement('div'); tmp.innerHTML = html; return (tmp.textContent || tmp.innerText || '').trim(); }
+  function getTextFromI18n(el, langCode) {
+    const key = el.getAttribute('data-i18n');
+    const type = el.getAttribute('data-i18n-type');
+    if (key) {
+      let val = (translations[langCode] && translations[langCode][key]) || (translations.it && translations.it[key]) || '';
+      if (!val) return (el.innerText || '').trim();
+      if (type === 'html' && looksLikeHtml(val)) return stripHTML(val);
+      return String(val).trim();
+    }
+    return (el.innerText || '').trim();
+  }
+
+  function getCurrentStepTitle(langCode) {
+    const stepEl = document.getElementById(currentStepId);
+    const h2 = stepEl ? stepEl.querySelector('h2') : null;
+    return h2 ? getTextFromI18n(h2, langCode) : currentStepId;
+  }
+
+  function copyHistory() {
+  // Build bilingual output with ONLY the specific elements requested, in chronological order
+  // Steps considered: 1,2,3,4,5 (Escalation step6 intentionally ignored unless required later)
+  const include = new Set(['step1','step2','step3','step4','step5']);
+  const trail = (clickTrail || []).filter(ev => include.has(ev.fromStepId));
+
+  // Helper to get YES/NO for steps 1 and 4
+  const normalizeYN = (sid, itLabel, enLabel) => {
+    if (sid !== 'step1' && sid !== 'step4') return { it: '', en: '' };
+    const itUp = (itLabel || '').toUpperCase();
+    const enUp = (enLabel || '').toUpperCase();
+    if (itUp.includes('SÌ') || itUp === 'SI' || enUp === 'YES') return { it: 'SÌ', en: 'YES' };
+    if (itUp.includes('NO') || enUp === 'NO') return { it: 'NO', en: 'NO' };
+    return { it: '—', en: '—' };
+  };
+
+  // Build IT lines
+  const linesIt = [];
+  let idx = 1;
+  for (const ev of trail) {
+    if (ev.fromStepId === 'step1') {
+      const yn = normalizeYN('step1', ev.action && ev.action.it, ev.action && ev.action.en);
+      linesIt.push(`- ${String(idx).padStart(2,'0')}) verifica i server global-iss / global-util sono pingabili da Personality Server? → ${yn.it}`);
+      idx++; continue;
+    }
+    if (ev.fromStepId === 'step2') {
+      linesIt.push(`- ${String(idx).padStart(2,'0')}) Aprire un ticket e assegnarlo a SSS North America - POS Triage - 3rd Level Support`);
+      linesIt.push('');
+      linesIt.push('Categoria: RETAIL › IN STORE TECH › POS SW › CIAO Optical › CIAO - Server Connection');
+      linesIt.push('Categoria: RETAIL › IN STORE TECH › POS SW › CIAO Sun › CIAO - Server Connection');
+      idx++; continue;
+    }
+    if (ev.fromStepId === 'step3') {
+      linesIt.push(`- ${String(idx).padStart(2,'0')}) Individuazione della virtual Machine – Dell EMC`);
+      idx++; continue;
+    }
+    if (ev.fromStepId === 'step4') {
+      const yn = normalizeYN('step4', ev.action && ev.action.it, ev.action && ev.action.en);
+      linesIt.push(`- ${String(idx).padStart(2,'0')}) Power cycle server Dell EMC`);
+      linesIt.push('- Chiedere allo store di spegnere il server Dell EMC');
+      linesIt.push('- Staccare il cavo di alimentazione per circa 10 secondi');
+      linesIt.push('- Per verificarne l’esito, attendere almeno 15–20 minuti');
+      linesIt.push(`Problema risolto? → ${yn.it}`);
+      idx++; continue;
+    }
+    if (ev.fromStepId === 'step5') {
+      linesIt.push(`- ${String(idx).padStart(2,'0')}) Ticket – Risolto`);
+      linesIt.push('');
+      linesIt.push('Categoria: RETAIL › IN STORE TECH › POS SW › CIAO Optical › CIAO - Server Connection');
+      linesIt.push('Categoria: RETAIL › IN STORE TECH › POS SW › CIAO Sun › CIAO - Server Connection');
+      idx++; continue;
+    }
+  }
+
+  // Build EN lines
+  const linesEn = [];
+  idx = 1;
+  for (const ev of trail) {
+    if (ev.fromStepId === 'step1') {
+      const yn = normalizeYN('step1', ev.action && ev.action.it, ev.action && ev.action.en);
+      linesEn.push(`- ${String(idx).padStart(2,'0')}) Are the Global ISS server and the Global Utile server pingable from Personality Server? → ${yn.en}`);
+      idx++; continue;
+    }
+    if (ev.fromStepId === 'step2') {
+      linesEn.push(`- ${String(idx).padStart(2,'0')}) Open a ticket and assign it to SSS North America - POS Triage - 3rd Level Support`);
+      linesEn.push('');
+      linesEn.push('Category: RETAIL › IN STORE TECH › POS SW › CIAO Optical › CIAO - Server Connection');
+      linesEn.push('Category: RETAIL › IN STORE TECH › POS SW › CIAO Sun › CIAO - Server Connection');
+      idx++; continue;
+    }
+    if (ev.fromStepId === 'step3') {
+      linesEn.push(`- ${String(idx).padStart(2,'0')}) VM identification – Dell EMC`);
+      idx++; continue;
+    }
+    if (ev.fromStepId === 'step4') {
+      const yn = normalizeYN('step4', ev.action && ev.action.it, ev.action && ev.action.en);
+      linesEn.push(`- ${String(idx).padStart(2,'0')}) Dell EMC server power cycle`);
+      linesEn.push('- Ask the store to turn off the Dell EMC server');
+      linesEn.push('- Unplug the power cable for about 10 seconds');
+      linesEn.push('- To verify the outcome, wait at least 15–20 minutes');
+      linesEn.push(`Issue resolved? → ${yn.en}`);
+      idx++; continue;
+    }
+    if (ev.fromStepId === 'step5') {
+      linesEn.push(`- ${String(idx).padStart(2,'0')}) Ticket – Resolved`);
+      linesEn.push('');
+      linesEn.push('Category: RETAIL › IN STORE TECH › POS SW › CIAO Optical › CIAO - Server Connection');
+      linesEn.push('Category: RETAIL › IN STORE TECH › POS SW › CIAO Sun › CIAO - Server Connection');
+      idx++; continue;
+    }
+  }
+
+  const headerIt = 'Lo store ha segnalato che CIAO non si apre (errore di connessione al server). Di seguito i passaggi eseguiti e le verifiche effettuate:';
+  const headerEn = 'The store reported that CIAO does not open (server connection error). Below are the steps performed and checks carried out:';
+
+  const text = [
+    headerIt,
+    ...linesIt,
+    '',
+    '---------------------------------------',
+    '',
+    headerEn,
+    ...linesEn
+  ].join('\n');
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text)
+      .then(() => alert(t('copy_success')))
+      .catch(() => fallbackCopy(text));
+  } else {
+    fallbackCopy(text);
+  }
+
+  function fallbackCopy(s) {
+    const ta = document.createElement('textarea');
+    ta.value = s;
+    ta.setAttribute('readonly', '');
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    try {
+      document.execCommand('copy');
+      alert(t('copy_success'));
+    } catch (e) {
+      alert(t('copy_error'));
+    } finally {
+      document.body.removeChild(ta);
+    }
+  }
+}
+  </script>
+</body>
+</html>
